@@ -24,10 +24,21 @@ Digital client management system for a dog grooming salon. Replaces paper forms.
 
 ## What's In Scope (Next Phase)
 
-1. **Find dog by pet name** — Search across all dogs
-2. **Find dog by phone** — Look up via owner phone
-3. **Find dog by postcode** — Look up via owner postcode
-4. **Book an appointment** — Calendar slot selection + booking flow
+### Search & Lookup (Priority 1-3)
+1. **Find dog by pet name** — Search across all dogs, real-time filter, case-insensitive
+2. **Find dog by phone** — Search dogs via owner phone number
+3. **Find dog by postcode** — Search dogs via owner postcode
+
+### Record Display & Navigation (Priority 4-5)
+4. **Display owner in dog record** — Show owner name with hyperlink to full owner record
+5. **Display dogs in owner record** — List all owner's dogs with visit count + hyperlink to each dog record
+
+### Record Editing (Priority 6-7)
+6. **Edit owner record** — Allow changes to all owner fields (name, phone, email, address, postcode)
+7. **Edit dog record** — Allow changes to all dog fields (name, age, breed, colour, vet, chipped, neutered/spayed)
+
+### Appointment Management (Priority 8)
+8. **Book an appointment** — Calendar slot selection + booking flow + visit recording
 
 ---
 
@@ -53,7 +64,7 @@ Digital client management system for a dog grooming salon. Replaces paper forms.
 
 ### 🟡 Architecture
 - All state in App.js (will become unmaintainable >500 lines)
-  - **Plan:** Extract screens to separate components before adding 4 new features
+  - **Plan:** Extract screens to separate components before adding 8 new features
 - No error handling for network failures
 - No loading states during fetch
 
