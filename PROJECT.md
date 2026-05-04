@@ -1,92 +1,74 @@
-# Dog Grooming Client Management Tool — Project Charter
+# Dog Grooming App - Project Overview
 
-## What This App Does
-
-Digital client management system for a dog grooming salon. Replaces paper forms.
-
-**Current MVP (Live):**
-- Register owners (name, phone, email, address)
-- Register dogs (pet name, age, breed, colour, vet, chipped, neutered/spayed status)
-- Record grooming visits (date, notes, payment, signature)
-- Look up owners & dogs
-- View visit history for each dog
-
-**Tech Stack:**
-- Frontend: React (Create React App)
-- Backend: Supabase (PostgreSQL + auth)
-- Hosting: Vercel (auto-deploys from main branch)
-- Live URL: https://dog-grooming-app-lytart.vercel.app
-
-**Data:**
-- 82 owners, 92 dogs, 190 visits imported from paper records (Jan 2026)
+## Project Status
+**Live:** https://dog-grooming-app-lytart.vercel.app
+**Repo:** https://github.com/MNewies/dog-grooming-app
+**Tech Stack:** React + Supabase + Vercel
 
 ---
 
-## What's In Scope (Next Phase)
+## Feature Backlog (Prioritized)
 
-1. **Edit owner record** — Edit and save owner-related data
-2. **Edit dog record** — Edit and save dog-related data
-3. **Display owner of dog in dog record** — Display the owner of the dog with link to full owner record
-4. **Display dog(s) owned in owner record** — Display the name of the dog(s) owned with link)s) to the full record(s)
-5. **Book an appointment** — Calendar slot selection + booking flow
+### ✅ Feature #1: Find Dog by Pet Name
+- **Status:** Complete & Live
+- **What it does:** Search dogs by name with real-time filtering
+- **Deployed:** Production
 
----
+### ✅ Feature #2: Edit Owner Record
+- **Status:** Complete & Live
+- **What it does:** Full CRUD for owner data (name, phone, email, address, postcode)
+- **Validation:** Email format, duplicate phone warning
+- **Deployed:** Production
 
-## What's NOT in Scope (Yet)
+### ✅ Feature #3: Edit Dog Record
+- **Status:** Complete & Live
+- **What it does:** Edit any dog field (pet name, age, breed, colour, vet, vet phone, chipped, neutered/spayed)
+- **Validation:** Pet name required
+- **Deployed:** Production (merged PR #3, May 4, 2026)
 
-- Multi-user login / role-based access
-- Groomer scheduling / staff management
-- Automated SMS/email notifications
-- Payment integration (cash/card only, manual entry)
-- Mobile app (web-responsive only)
-- Analytics/reporting dashboard
-- Integration with vet systems
+### ⏳ Feature #4: Create Visit with Calendar Booking
+- **Status:** Not started
+- **What it does:** Book grooming slots (30-min intervals), select multiple slots per dog, manage availability
+- **Dependencies:** Calendar UI library, visit creation logic
+- **Priority:** High
 
----
-
-## Known Issues & Tech Debt
-
-### 🔴 Security
-- **Supabase secret key in source code** (PARTIALLY FIXED)
-  - Old key deleted from Supabase (Jan 28, 2026)
-  - New key added to App.js (temporary workaround)
-  - **Action needed:** Move to `.env.local` + Vercel secrets (future chat)
-
-### 🟡 Architecture
-- All state in App.js (will become unmaintainable >500 lines)
-  - **Plan:** Extract screens to separate components before adding 4 new features
-- No error handling for network failures
-- No loading states during fetch
-
-### 🟡 Data
-- No validation on form inputs (e.g., phone format, postcode format)
-- No unique constraints on owner phone/email (duplicates possible)
+### ⏳ Feature #5: Manage Breed Master List
+- **Status:** Not started
+- **What it does:** Admin feature to add/update/delete breed options
+- **Current count:** 516 breeds
+- **Priority:** Medium
 
 ---
 
-## Key Decisions
+## Development Notes
 
-| Decision | Reason | Date |
-|----------|--------|------|
-| React + Supabase | Non-coder friendly, fast to build, low cost | Jan 2026 |
-| Vercel auto-deploy | No CI/CD setup needed, deploys on every git push | Jan 2026 |
-| Paper forms first, then digital entry | Wife can use paper in salon, import data later | Jan 2026 |
-| Only publishable key in frontend code | Supabase Row Level Security (RLS) protects data | Jan 2026 |
+### Code Patterns
+- **Edit flows:** Use pattern from Feature #2 (Manage Owner) — state management, validation, success/error messages
+- **Form handling:** Controlled components with onChange handlers
+- **Database writes:** Supabase `.update().eq(id)` pattern
+- **Navigation:** setScreen() for page routing
+
+### Deployment Workflow
+1. Create feature branch: `git checkout -b feature/<name>`
+2. Code changes in VS Code
+3. Push to branch: `git push origin feature/<name>`
+4. Create Pull Request on GitHub
+5. Merge PR → Vercel auto-deploys to production
+6. Test live app
+
+### Known Issues
+- App.js is 270+ lines; plan component extraction before Feature #4
+- No breed validation against master list yet (future enhancement)
+- Supabase key in App.js (Jan 28, 2026 update)
+
+### Database Schema
+**Owners table:** id, name, phone, email, postcode, house_street, town
+**Dogs table:** id, owner_id, pet_name, pet_age, breed, colour, chipped, neutered_spayed, vet, vet_phone
+**Visits table:** id, dog_id, visit_number, visit_date, treatment_notes, payment_amount, payment_method, signature_of_consent, date_of_signature
 
 ---
 
-## How To Report Issues
-
-Use GitHub Issues. Tag as:
-- `bug` — Something broken
-- `feature` — New capability
-- `tech-debt` — Code quality, architecture
-- `security` — Safety concern
-
----
-
-## References
-
-- **Wireframe:** DIY_Test_Wire_Frame_2026.pdf (in project root)
-- **Data schema:** MASTER_DOGS_TABLE_4.csv, MASTER_VISITS_TABLE_4.csv
-- **Repo:** https://github.com/MNewies/dog-grooming-app
+## Next Steps
+1. Plan Feature #4 (Calendar booking) scope and UI
+2. Consider extracting App.js into smaller components
+3. Add breed validation against master list (optional for Feature #4)
