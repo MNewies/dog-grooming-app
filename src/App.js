@@ -12,24 +12,26 @@ export default function App() {
   const [dogs, setDogs] = useState([]);
   const [visits, setVisits] = useState([]);
   
-  // Form states
   const [ownerForm, setOwnerForm] = useState({ name: '', phone: '', email: '', postcode: '', house_street: '', town: '' });
   const [dogForm, setDogForm] = useState({ pet_name: '', pet_age: '', breed: '', colour: '', chipped: false, neutered_spayed: false, vet: '', vet_phone: '' });
   const [visitForm, setVisitForm] = useState({ visit_date: '', treatment_notes: '', payment_amount: '', payment_method: '', signature_of_consent: false });
   
-  // FEATURE #1: Find dog by pet name search state
   const [dogNameSearch, setDogNameSearch] = useState('');
+  const [ownerSearch, setOwnerSearch] = useState('');
+  const [filteredOwners, setFilteredOwners] = useState([]);
+  const [editingOwner, setEditingOwner] = useState(null);
+  const [editOwnerForm, setEditOwnerForm] = useState({ name: '', phone: '', email: '', postcode: '', house_street: '', town: '' });
+  const [emailError, setEmailError] = useState('');
+  const [phoneWarning, setPhoneWarning] = useState('');
   
   const [selectedOwner, setSelectedOwner] = useState(null);
   const [selectedDog, setSelectedDog] = useState(null);
   const [message, setMessage] = useState('');
 
-  // Fetch owners on load
   useEffect(() => {
     fetchOwners();
   }, []);
 
-  // Fetch all dogs when Find Dog screen is opened
   useEffect(() => {
     if (screen === 'findDog') {
       fetchAllDogs();
@@ -60,7 +62,6 @@ export default function App() {
     else setVisits(data || []);
   };
 
-  // Create owner
   const handleCreateOwner = async () => {
     if (!ownerForm.name) {
       setMessage('Owner name is required');
@@ -77,7 +78,6 @@ export default function App() {
     }
   };
 
-  // Create dog
   const handleCreateDog = async () => {
     if (!dogForm.pet_name || !selectedOwner) {
       setMessage('Pet name and owner are required');
@@ -96,7 +96,6 @@ export default function App() {
     }
   };
 
-  // Create visit
   const handleCreateVisit = async () => {
     if (!visitForm.visit_date) {
       setMessage('Visit date is required');
@@ -123,12 +122,106 @@ export default function App() {
     }
   };
 
-  // FEATURE #1: Filter dogs by pet name (case-insensitive)
+  const validateEmail = (email) => {
+    if (!email) return true;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const checkDuplicatePhone = (phone, excludeOwnerId) => {
+    if (!phone) return false;
+    return owners.some(owner => owner.phone === phone && owner.id !== excludeOwnerId);
+  };
+
+  const handleStartEditOwner = (owner) => {
+    setEditingOwner(owner);
+    setEditOwnerForm({
+      name: owner.name,
+      phone: owner.phone,
+      email: owner.email,
+      postcode: owner.postcode,
+      house_street: owner.house_street,
+      town: owner.town
+    });
+    setEmailError('');
+    setPhoneWarning('');
+    setScreen('editOwner');
+  };
+
+  const handleEditOwnerFieldChange = (field, value) => {
+    setEditOwnerForm({ ...editOwnerForm, [field]: value });
+    
+    if (field === 'email' && value && !validateEmail(value)) {
+      setEmailError('Invalid email format');
+    } else if (field === 'email') {
+      setEmailError('');
+    }
+
+    if (field === 'phone') {
+      if (checkDuplicatePhone(value, editingOwner.id)) {
+        setPhoneWarning('Warning: This phone number is already in use');
+      } else {
+        setPhoneWarning('');
+      }
+    }
+  };
+
+  const handleSaveEditOwner = async () => {
+    if (!editOwnerForm.name.trim()) {
+      setMessage('Owner name is required');
+      return;
+    }
+    
+    if (editOwnerForm.email && !validateEmail(editOwnerForm.email)) {
+      setMessage('Invalid email format');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('owners')
+      .update({
+        name: editOwnerForm.name,
+        phone: editOwnerForm.phone,
+        email: editOwnerForm.email,
+        postcode: editOwnerForm.postcode,
+        house_street: editOwnerForm.house_street,
+        town: editOwnerForm.town
+      })
+      .eq('id', editingOwner.id);
+
+    if (error) {
+      setMessage('Error saving owner: ' + error.message);
+    } else {
+      setMessage('Owner updated successfully');
+      fetchOwners();
+      setEditingOwner(null);
+      setTimeout(() => setScreen('home'), 1500);
+    }
+  };
+
+  const handleCancelEditOwner = () => {
+    setEditingOwner(null);
+    setEmailError('');
+    setPhoneWarning('');
+    setScreen('home');
+  };
+
   const filteredDogs = dogs.filter(dog =>
     dog.pet_name.toLowerCase().includes(dogNameSearch.toLowerCase())
   );
 
-  // Home screen
+  useEffect(() => {
+    if (ownerSearch.trim()) {
+      const filtered = owners.filter(owner =>
+        owner.name.toLowerCase().includes(ownerSearch.toLowerCase()) ||
+        (owner.phone && owner.phone.includes(ownerSearch))
+      );
+      setFilteredOwners(filtered);
+    } else {
+      setFilteredOwners([]);
+    }
+  }, [ownerSearch, owners]);
+
   if (screen === 'home') {
     return (
       <div className="container">
@@ -136,13 +229,13 @@ export default function App() {
         <div className="button-group">
           <button className="btn btn-primary" onClick={() => setScreen('createOwner')}>New Owner</button>
           <button className="btn btn-secondary" onClick={() => setScreen('findDog')}>Find/Add Dog</button>
+          <button className="btn btn-tertiary" onClick={() => { setOwnerSearch(''); setFilteredOwners([]); setScreen('manageOwner'); }}>Manage Owner</button>
         </div>
         {message && <div className="message">{message}</div>}
       </div>
     );
   }
 
-  // Create owner screen
   if (screen === 'createOwner') {
     return (
       <div className="container">
@@ -162,7 +255,6 @@ export default function App() {
     );
   }
 
-  // Find/Add Dog screen - FEATURE #1 implemented here
   if (screen === 'findDog') {
     return (
       <div className="container">
@@ -177,7 +269,6 @@ export default function App() {
           className="search-input"
         />
         
-        {/* Display search results */}
         <div className="search-results">
           {dogNameSearch && filteredDogs.length > 0 ? (
             <div>
@@ -285,7 +376,128 @@ export default function App() {
     );
   }
 
-  // View dog screen
+  if (screen === 'manageOwner') {
+    return (
+      <div className="container">
+        <h1>Manage Owner</h1>
+        
+        <h2>Find Owner</h2>
+        <input 
+          type="text" 
+          placeholder="Search by name or phone..." 
+          value={ownerSearch}
+          onChange={(e) => setOwnerSearch(e.target.value)}
+          className="search-input"
+        />
+        
+        <div className="search-results">
+          {ownerSearch && filteredOwners.length > 0 ? (
+            <div>
+              <h3>Found {filteredOwners.length} owner(s)</h3>
+              {filteredOwners.map(owner => (
+                <div key={owner.id} className="owner-card">
+                  <div className="owner-info">
+                    <p><strong>Name:</strong> {owner.name}</p>
+                    <p><strong>Phone:</strong> {owner.phone || 'Not provided'}</p>
+                    <p><strong>Email:</strong> {owner.email || 'Not provided'}</p>
+                    <p><strong>Address:</strong> {owner.house_street || 'Not provided'}, {owner.town || ''}</p>
+                    <p><strong>Postcode:</strong> {owner.postcode || 'Not provided'}</p>
+                  </div>
+                  <div className="owner-actions">
+                    <button 
+                      className="btn btn-small" 
+                      onClick={() => handleStartEditOwner(owner)}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : ownerSearch ? (
+            <p className="no-results">No owners found</p>
+          ) : (
+            <p className="hint">Type name or phone to search</p>
+          )}
+        </div>
+
+        <div className="button-group">
+          <button className="btn btn-secondary" onClick={() => { setOwnerSearch(''); setScreen('home'); }}>Back</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === 'editOwner' && editingOwner) {
+    return (
+      <div className="container">
+        <h1>Edit Owner - {editingOwner.name}</h1>
+        <div className="form-section">
+          <label>Owner Name *</label>
+          <input 
+            type="text" 
+            placeholder="Owner Name" 
+            value={editOwnerForm.name} 
+            onChange={(e) => handleEditOwnerFieldChange('name', e.target.value)}
+          />
+          
+          <label>Phone</label>
+          <input 
+            type="tel" 
+            placeholder="Phone" 
+            value={editOwnerForm.phone} 
+            onChange={(e) => handleEditOwnerFieldChange('phone', e.target.value)}
+          />
+          {phoneWarning && <div className="warning">{phoneWarning}</div>}
+          
+          <label>Email</label>
+          <input 
+            type="email" 
+            placeholder="Email" 
+            value={editOwnerForm.email} 
+            onChange={(e) => handleEditOwnerFieldChange('email', e.target.value)}
+            onBlur={() => {
+              if (editOwnerForm.email && !validateEmail(editOwnerForm.email)) {
+                setEmailError('Invalid email format');
+              }
+            }}
+          />
+          {emailError && <div className="error">{emailError}</div>}
+          
+          <label>House & Street</label>
+          <input 
+            type="text" 
+            placeholder="House & Street" 
+            value={editOwnerForm.house_street} 
+            onChange={(e) => handleEditOwnerFieldChange('house_street', e.target.value)}
+          />
+          
+          <label>Town</label>
+          <input 
+            type="text" 
+            placeholder="Town" 
+            value={editOwnerForm.town} 
+            onChange={(e) => handleEditOwnerFieldChange('town', e.target.value)}
+          />
+          
+          <label>Postcode</label>
+          <input 
+            type="text" 
+            placeholder="Postcode" 
+            value={editOwnerForm.postcode} 
+            onChange={(e) => handleEditOwnerFieldChange('postcode', e.target.value)}
+          />
+        </div>
+
+        <div className="button-group">
+          <button className="btn btn-primary" onClick={handleSaveEditOwner}>Save Changes</button>
+          <button className="btn btn-secondary" onClick={handleCancelEditOwner}>Cancel</button>
+        </div>
+        {message && <div className="message">{message}</div>}
+      </div>
+    );
+  }
+
   if (screen === 'viewDog' && selectedDog) {
     return (
       <div className="container">
@@ -326,7 +538,6 @@ export default function App() {
     );
   }
 
-  // Record visit screen
   if (screen === 'recordVisit' && selectedDog) {
     return (
       <div className="container">
