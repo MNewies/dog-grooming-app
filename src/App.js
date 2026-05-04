@@ -24,6 +24,9 @@ export default function App() {
   const [emailError, setEmailError] = useState('');
   const [phoneWarning, setPhoneWarning] = useState('');
   
+  const [editingDog, setEditingDog] = useState(null);
+  const [editDogForm, setEditDogForm] = useState({ pet_name: '', pet_age: '', breed: '', colour: '', chipped: false, neutered_spayed: false, vet: '', vet_phone: '' });
+  
   const [selectedOwner, setSelectedOwner] = useState(null);
   const [selectedDog, setSelectedDog] = useState(null);
   const [message, setMessage] = useState('');
@@ -204,6 +207,60 @@ export default function App() {
     setEmailError('');
     setPhoneWarning('');
     setScreen('home');
+  };
+
+  const handleStartEditDog = (dog) => {
+    setEditingDog(dog);
+    setEditDogForm({
+      pet_name: dog.pet_name,
+      pet_age: dog.pet_age,
+      breed: dog.breed,
+      colour: dog.colour,
+      chipped: dog.chipped,
+      neutered_spayed: dog.neutered_spayed,
+      vet: dog.vet,
+      vet_phone: dog.vet_phone
+    });
+    setScreen('editDog');
+  };
+
+  const handleEditDogFieldChange = (field, value) => {
+    setEditDogForm({ ...editDogForm, [field]: value });
+  };
+
+  const handleSaveEditDog = async () => {
+    if (!editDogForm.pet_name.trim()) {
+      setMessage('Pet name is required');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('dogs')
+      .update({
+        pet_name: editDogForm.pet_name,
+        pet_age: editDogForm.pet_age,
+        breed: editDogForm.breed,
+        colour: editDogForm.colour,
+        chipped: editDogForm.chipped,
+        neutered_spayed: editDogForm.neutered_spayed,
+        vet: editDogForm.vet,
+        vet_phone: editDogForm.vet_phone
+      })
+      .eq('id', editingDog.id);
+
+    if (error) {
+      setMessage('Error saving dog: ' + error.message);
+    } else {
+      setMessage('Dog updated successfully');
+      setSelectedDog({ ...editingDog, ...editDogForm });
+      setEditingDog(null);
+      setTimeout(() => setScreen('viewDog'), 1500);
+    }
+  };
+
+  const handleCancelEditDog = () => {
+    setEditingDog(null);
+    setScreen('viewDog');
   };
 
   const filteredDogs = dogs.filter(dog =>
@@ -498,6 +555,87 @@ export default function App() {
     );
   }
 
+  if (screen === 'editDog' && editingDog) {
+    return (
+      <div className="container">
+        <h1>Edit Dog - {editingDog.pet_name}</h1>
+        <div className="form-section">
+          <label>Pet Name *</label>
+          <input 
+            type="text" 
+            placeholder="Pet Name" 
+            value={editDogForm.pet_name} 
+            onChange={(e) => handleEditDogFieldChange('pet_name', e.target.value)}
+          />
+          
+          <label>Pet Age</label>
+          <input 
+            type="number" 
+            placeholder="Pet Age" 
+            value={editDogForm.pet_age} 
+            onChange={(e) => handleEditDogFieldChange('pet_age', e.target.value)}
+          />
+          
+          <label>Breed</label>
+          <input 
+            type="text" 
+            placeholder="Breed" 
+            value={editDogForm.breed} 
+            onChange={(e) => handleEditDogFieldChange('breed', e.target.value)}
+          />
+          
+          <label>Colour</label>
+          <input 
+            type="text" 
+            placeholder="Colour" 
+            value={editDogForm.colour} 
+            onChange={(e) => handleEditDogFieldChange('colour', e.target.value)}
+          />
+          
+          <label>Vet</label>
+          <input 
+            type="text" 
+            placeholder="Vet" 
+            value={editDogForm.vet} 
+            onChange={(e) => handleEditDogFieldChange('vet', e.target.value)}
+          />
+          
+          <label>Vet Phone</label>
+          <input 
+            type="tel" 
+            placeholder="Vet Phone" 
+            value={editDogForm.vet_phone} 
+            onChange={(e) => handleEditDogFieldChange('vet_phone', e.target.value)}
+          />
+          
+          <label>
+            <input 
+              type="checkbox" 
+              checked={editDogForm.chipped} 
+              onChange={(e) => handleEditDogFieldChange('chipped', e.target.checked)}
+            />
+            Chipped
+          </label>
+          
+          <label>
+            <input 
+              type="checkbox" 
+              checked={editDogForm.neutered_spayed} 
+              onChange={(e) => handleEditDogFieldChange('neutered_spayed', e.target.checked)}
+            />
+            Neutered/Spayed
+          </label>
+        </div>
+
+        <div className="button-group">
+          <button className="btn btn-primary" onClick={handleSaveEditDog}>Save Changes</button>
+          <button className="btn btn-secondary" onClick={handleCancelEditDog}>Cancel</button>
+        </div>
+        {message && <div className="message">{message}</div>}
+      </div>
+    );
+  }
+
   if (screen === 'viewDog' && selectedDog) {
     return (
       <div className="container">
@@ -532,6 +670,7 @@ export default function App() {
             setVisitForm({ visit_date: '', treatment_notes: '', payment_amount: '', payment_method: '', signature_of_consent: false });
             setScreen('recordVisit');
           }}>Add Visit</button>
+          <button className="btn btn-primary" onClick={() => handleStartEditDog(selectedDog)}>Edit Dog</button>
           <button className="btn btn-secondary" onClick={() => setScreen('findDog')}>Back</button>
         </div>
       </div>
