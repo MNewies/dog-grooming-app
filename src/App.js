@@ -150,6 +150,7 @@ export default function App() {
     });
     setEmailError('');
     setPhoneWarning('');
+    fetchDogs(owner.id);
     setScreen('editOwner');
   };
 
@@ -286,9 +287,9 @@ export default function App() {
       <div className="container">
         <h1>Dog Grooming Client Management</h1>
         <div className="button-group">
+          <button className="btn btn-tertiary" onClick={() => { setOwnerSearch(''); setFilteredOwners([]); setScreen('manageOwner'); }}>Manage Owner</button>
           <button className="btn btn-primary" onClick={() => setScreen('createOwner')}>New Owner</button>
           <button className="btn btn-secondary" onClick={() => setScreen('findDog')}>Find/Add Dog</button>
-          <button className="btn btn-tertiary" onClick={() => { setOwnerSearch(''); setFilteredOwners([]); setScreen('manageOwner'); }}>Manage Owner</button>
         </div>
         {message && <div className="message">{message}</div>}
       </div>
@@ -371,6 +372,17 @@ export default function App() {
             </option>
           ))}
         </select>
+        
+        {selectedOwner && (
+          <p className="inline-link">
+            <button 
+              className="link-button"
+              onClick={() => handleStartEditOwner(selectedOwner)}
+            >
+              Edit Owner
+            </button>
+          </p>
+        )}
 
         {selectedOwner && dogs.length > 0 && (
           <div>
@@ -473,9 +485,39 @@ export default function App() {
   }
 
   if (screen === 'editOwner' && editingOwner) {
+    // Get dogs owned by this owner
+    const ownersDogs = dogs && dogs.length > 0 
+      ? dogs.filter(dog => dog.owner_id === editingOwner.id)
+      : [];
+    
     return (
       <div className="container">
         <h1>Edit Owner - {editingOwner.name}</h1>
+        
+        {/* Dogs Owned Section */}
+        <div className="section">
+          <h2>Dog(s) Owned</h2>
+          {ownersDogs.length > 0 ? (
+            <div className="dog-links">
+              {ownersDogs.map(dog => (
+                <button
+                  key={dog.id}
+                  className="link-button"
+                  onClick={() => {
+                    setSelectedDog(dog);
+                    fetchVisits(dog.id);
+                    setScreen('viewDog');
+                  }}
+                >
+                  {dog.pet_name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p>No dogs registered yet</p>
+          )}
+        </div>
+
         <div className="form-section">
           <label>Owner Name *</label>
           <input 
@@ -535,7 +577,7 @@ export default function App() {
 
         <div className="button-group">
           <button className="btn btn-primary" onClick={handleSaveEditOwner}>Save Changes</button>
-          <button className="btn btn-secondary" onClick={handleCancelEditOwner}>Cancel</button>
+          <button className="btn btn-secondary" onClick={handleCancelEditOwner}>Back</button>
         </div>
         {message && <div className="message">{message}</div>}
       </div>
@@ -543,9 +585,30 @@ export default function App() {
   }
 
   if (screen === 'editDog' && editingDog) {
+    // Find the owner of this dog
+    const dogOwner = owners.find(o => o.id === editingDog.owner_id);
+    
     return (
       <div className="container">
         <h1>Edit Dog - {editingDog.pet_name}</h1>
+        <div className="owner-link">
+          <p>
+            <strong>Owner: </strong>
+            {dogOwner ? (
+              <button
+                className="link-button"
+                onClick={() => {
+                  handleStartEditOwner(dogOwner);
+                }}
+              >
+                {dogOwner.name}
+              </button>
+            ) : (
+              'Unknown'
+            )}
+          </p>
+        </div>
+        
         <div className="form-section">
           <label>Pet Name *</label>
           <input 
@@ -624,9 +687,30 @@ export default function App() {
   }
 
   if (screen === 'viewDog' && selectedDog) {
+    // Find the owner of this dog
+    const dogOwner = owners.find(o => o.id === selectedDog.owner_id);
+    
     return (
       <div className="container">
         <h1>{selectedDog.pet_name}</h1>
+        <div className="owner-link">
+          <p>
+            <strong>Owner: </strong>
+            {dogOwner ? (
+              <button
+                className="link-button"
+                onClick={() => {
+                  handleStartEditOwner(dogOwner);
+                }}
+              >
+                {dogOwner.name}
+              </button>
+            ) : (
+              'Unknown'
+            )}
+          </p>
+        </div>
+        
         <h2>Dog Details</h2>
         <p><strong>Breed:</strong> {selectedDog.breed}</p>
         <p><strong>Colour:</strong> {selectedDog.colour}</p>
@@ -664,6 +748,6 @@ export default function App() {
     );
   }
 if (screen === 'recordVisit' && selectedDog) {
-  return <RecordVisit setScreen={setScreen} selectedDog={selectedDog} visitForm={visitForm} setVisitForm={setVisitForm} handleCreateVisit={handleCreateVisit} message={message} />;
+  return <RecordVisit setScreen={setScreen} selectedDog={selectedDog} visitForm={visitForm} setVisitForm={setVisitForm} handleCreateVisit={handleCreateVisit} message={message} owners={owners} selectedOwner={selectedOwner} setEditingOwner={setEditingOwner} setEditOwnerForm={setEditOwnerForm} />;
 }
 }
