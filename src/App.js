@@ -20,6 +20,7 @@ export default function App() {
   
   const [dogNameSearch, setDogNameSearch] = useState('');
   const [ownerSearch, setOwnerSearch] = useState('');
+  const [ownerSearchFindDog, setOwnerSearchFindDog] = useState('');
   const [filteredOwners, setFilteredOwners] = useState([]);
   const [editingOwner, setEditingOwner] = useState(null);
   const [editOwnerForm, setEditOwnerForm] = useState({ name: '', phone: '', email: '', postcode: '', house_street: '', town: '' });
@@ -187,6 +188,28 @@ export default function App() {
     const updatedPhotos = visitForm.photos.filter((_, i) => i !== index);
     setVisitPhotos(updatedPhotos);
     setVisitForm({ ...visitForm, photos: updatedPhotos });
+  };
+
+  // SESSION 019 FIX: Get unique owners sorted alphabetically by surname
+  const getFilteredAndSortedOwners = (searchTerm = '') => {
+    const uniqueOwners = Array.from(
+      new Set(owners.map(o => o.name))
+    );
+    
+    const sorted = uniqueOwners.sort((a, b) => {
+      const lastNameA = a.split(' ').pop().toLowerCase();
+      const lastNameB = b.split(' ').pop().toLowerCase();
+      return lastNameA.localeCompare(lastNameB);
+    });
+    
+    if (searchTerm.trim()) {
+      return sorted.filter(name => {
+        const surname = name.split(' ').pop().toLowerCase();
+        return surname.startsWith(searchTerm.toLowerCase());
+      });
+    }
+    
+    return sorted;
   };
 
   const handleStartEditOwner = (owner) => {
@@ -431,25 +454,34 @@ export default function App() {
         </div>
 
         <h2>Register New Dog</h2>
-        <p>Select owner:</p>
-        <select onChange={(e) => {
-          const owner = owners.find(o => o.id === parseInt(e.target.value));
-          setSelectedOwner(owner);
-          if (owner) fetchDogs(owner.id);
-        }} className="full-width">
+        
+        <label>Search owner by surname:</label>
+        <input
+          type="text"
+          placeholder="Type surname..."
+          value={ownerSearchFindDog}
+          onChange={(e) => setOwnerSearchFindDog(e.target.value)}
+          style={{ width: '100%', padding: '8px', marginBottom: '8px' }}
+        />
+        
+        <label>Select owner:</label>
+        <select
+          value={selectedOwner ? selectedOwner.id : ''}
+          onChange={(e) => {
+            const owner = owners.find(o => o.id === parseInt(e.target.value));
+            setSelectedOwner(owner || null);
+          }}
+          style={{ width: '100%' }}
+        >
           <option value="">-- Choose an owner --</option>
-          {owners.slice().sort((a, b) => {
-            const surnameA = extractSurname(a.name).toLowerCase();
-            const surnameB = extractSurname(b.name).toLowerCase();
-            if (surnameA !== surnameB) {
-              return surnameA.localeCompare(surnameB);
-            }
-            return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-          }).map(owner => (
-            <option key={owner.id} value={owner.id}>
-              {owner.name} ({owner.phone || 'no phone'})
-            </option>
-          ))}
+          {getFilteredAndSortedOwners(ownerSearchFindDog).map((ownerName) => {
+            const owner = owners.find(o => o.name === ownerName);
+            return (
+              <option key={owner.id} value={owner.id}>
+                {owner.name} ({owner.phone || 'no phone'})
+              </option>
+            );
+          })}
         </select>
         
         {selectedOwner && (
