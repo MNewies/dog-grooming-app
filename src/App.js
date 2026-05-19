@@ -438,7 +438,14 @@ export default function App() {
           if (owner) fetchDogs(owner.id);
         }} className="full-width">
           <option value="">-- Choose an owner --</option>
-          {owners.map(owner => (
+          {owners.slice().sort((a, b) => {
+            const surnameA = extractSurname(a.name).toLowerCase();
+            const surnameB = extractSurname(b.name).toLowerCase();
+            if (surnameA !== surnameB) {
+              return surnameA.localeCompare(surnameB);
+            }
+            return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+          }).map(owner => (
             <option key={owner.id} value={owner.id}>
               {owner.name} ({owner.phone || 'no phone'})
             </option>
