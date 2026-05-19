@@ -368,3 +368,135 @@ select {
   margin: 10px 0;
   font-size: 0.95em;
 }
+
+/* Session 018: Photo Upload Styles */
+.photo-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 2px dashed #007bff;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #f9f9f9;
+  font-size: 1em;
+}
+
+.photo-input:hover {
+  background-color: #f0f8ff;
+  border-color: #0056b3;
+}
+
+.photo-preview {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.dog-photo {
+  max-width: 300px;
+  max-height: 300px;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.photos-preview {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.preview-label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.photo-item {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: white;
+  border: 1px solid #ddd;
+}
+
+.visit-photo {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.visit-photo-thumbnail {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.visit-photo-thumbnail:hover {
+  transform: scale(1.05);
+}
+
+.btn-small {
+  padding: 8px 12px;
+  font-size: 0.9em;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  padding: 6px 10px;
+  font-size: 0.85em;
+}
+
+.btn-delete:hover {
+  background-color: #c82333;
+}
+
+.visit-photos-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #ddd;
+}
+
+@media (max-width: 600px) {
+  .photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .dog-photo {
+    max-width: 200px;
+    max-height: 200px;
+  }
+
+  .visit-photo {
+    height: 150px;
+  }
+
+  .visit-photo-thumbnail {
+    width: 100px;
+    height: 100px;
+  }
+}

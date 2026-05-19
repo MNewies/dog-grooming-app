@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function RecordVisit({ setScreen, selectedDog, visitForm, setVisitForm, handleCreateVisit, message, owners, selectedOwner, setEditingOwner, setEditOwnerForm, setScreen: setScreenFromParent }) {
+export default function RecordVisit({ setScreen, selectedDog, visitForm, setVisitForm, handleCreateVisit, message, owners, selectedOwner, setEditingOwner, setEditOwnerForm, handleVisitPhotoUpload, visitPhotos, removeVisitPhoto }) {
   // Find the owner of the selected dog
   const dogOwner = owners && owners.length > 0 ? owners.find(o => o.id === selectedDog.owner_id) : null;
   
@@ -39,6 +39,37 @@ export default function RecordVisit({ setScreen, selectedDog, visitForm, setVisi
         
         <input type="date" value={visitForm.visit_date} onChange={(e) => setVisitForm({...visitForm, visit_date: e.target.value})} />
         <textarea placeholder="Treatment Notes (max 500 characters)" value={visitForm.treatment_notes} onChange={(e) => setVisitForm({...visitForm, treatment_notes: e.target.value})} />
+        
+        <div className="form-section">
+          <label>Upload Visit Photos</label>
+          <input 
+            type="file" 
+            accept="image/*" 
+            multiple
+            onChange={handleVisitPhotoUpload}
+            className="photo-input"
+          />
+          {visitPhotos && visitPhotos.length > 0 && (
+            <div className="photos-preview">
+              <p className="preview-label">{visitPhotos.length} photo(s) uploaded</p>
+              <div className="photos-grid">
+                {visitPhotos.map((photo, index) => (
+                  <div key={index} className="photo-item">
+                    <img src={photo} alt={`Visit photo ${index + 1}`} className="visit-photo" />
+                    <button 
+                      type="button"
+                      className="btn btn-small btn-delete"
+                      onClick={() => removeVisitPhoto(index)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        
         <input type="number" placeholder="Payment Amount (£)" value={visitForm.payment_amount} onChange={(e) => setVisitForm({...visitForm, payment_amount: e.target.value})} />
         <select value={visitForm.payment_method} onChange={(e) => setVisitForm({...visitForm, payment_method: e.target.value})}>
           <option value="">Select payment method</option>

@@ -15,8 +15,8 @@ export default function App() {
   const [visits, setVisits] = useState([]);
   
   const [ownerForm, setOwnerForm] = useState({ name: '', phone: '', email: '', postcode: '', house_street: '', town: '' });
-  const [dogForm, setDogForm] = useState({ pet_name: '', pet_age: '', breed: '', colour: '', chipped: false, neutered_spayed: false, vet: '', vet_phone: '' });
-  const [visitForm, setVisitForm] = useState({ visit_date: '', treatment_notes: '', payment_amount: '', payment_method: '', signature_of_consent: false });
+  const [dogForm, setDogForm] = useState({ pet_name: '', pet_age: '', breed: '', colour: '', chipped: false, neutered_spayed: false, vet: '', vet_phone: '', photo: null });
+  const [visitForm, setVisitForm] = useState({ visit_date: '', treatment_notes: '', payment_amount: '', payment_method: '', signature_of_consent: false, photos: [] });
   
   const [dogNameSearch, setDogNameSearch] = useState('');
   const [ownerSearch, setOwnerSearch] = useState('');
@@ -27,11 +27,13 @@ export default function App() {
   const [phoneWarning, setPhoneWarning] = useState('');
   
   const [editingDog, setEditingDog] = useState(null);
-  const [editDogForm, setEditDogForm] = useState({ pet_name: '', pet_age: '', breed: '', colour: '', chipped: false, neutered_spayed: false, vet: '', vet_phone: '' });
+  const [editDogForm, setEditDogForm] = useState({ pet_name: '', pet_age: '', breed: '', colour: '', chipped: false, neutered_spayed: false, vet: '', vet_phone: '', photo: null });
   
   const [selectedOwner, setSelectedOwner] = useState(null);
   const [selectedDog, setSelectedDog] = useState(null);
   const [message, setMessage] = useState('');
+  const [dogPhoto, setDogPhoto] = useState(null);
+  const [visitPhotos, setVisitPhotos] = useState([]);
 
   useEffect(() => {
     fetchOwners();
@@ -93,7 +95,8 @@ export default function App() {
       setMessage('Error creating dog: ' + error.message);
     } else {
       setMessage('Dog created successfully');
-      setDogForm({ pet_name: '', pet_age: '', breed: '', colour: '', chipped: false, neutered_spayed: false, vet: '', vet_phone: '' });
+      setDogForm({ pet_name: '', pet_age: '', breed: '', colour: '', chipped: false, neutered_spayed: false, vet: '', vet_phone: '', photo: null });
+      setDogPhoto(null);
       if (data && data.length > 0) {
         setSelectedDog(data[0]);
         setScreen('recordVisit');
@@ -115,13 +118,15 @@ export default function App() {
       payment_amount: visitForm.payment_amount ? parseFloat(visitForm.payment_amount) : null,
       payment_method: visitForm.payment_method,
       signature_of_consent: visitForm.signature_of_consent,
+      photos: visitForm.photos && visitForm.photos.length > 0 ? visitForm.photos : null,
       date_of_signature: new Date().toISOString().split('T')[0]
     }]);
     if (error) {
       setMessage('Error recording visit: ' + error.message);
     } else {
       setMessage('Visit recorded successfully');
-      setVisitForm({ visit_date: '', treatment_notes: '', payment_amount: '', payment_method: '', signature_of_consent: false });
+      setVisitForm({ visit_date: '', treatment_notes: '', payment_amount: '', payment_method: '', signature_of_consent: false, photos: [] });
+      setVisitPhotos([]);
       fetchVisits(selectedDog.id);
       setTimeout(() => setScreen('home'), 1500);
     }
@@ -136,6 +141,52 @@ export default function App() {
   const checkDuplicatePhone = (phone, excludeOwnerId) => {
     if (!phone) return false;
     return owners.some(owner => owner.phone === phone && owner.id !== excludeOwnerId);
+  };
+
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleDogPhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        const base64 = await convertFileToBase64(file);
+        setDogPhoto(base64);
+        setDogForm({ ...dogForm, photo: base64 });
+      } catch (error) {
+        setMessage('Error uploading photo: ' + error.message);
+      }
+    }
+  };
+
+  const handleVisitPhotoUpload = async (e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      try {
+        const newPhotos = [];
+        for (let i = 0; i < files.length; i++) {
+          const base64 = await convertFileToBase64(files[i]);
+          newPhotos.push(base64);
+        }
+        const updatedPhotos = [...(visitForm.photos || []), ...newPhotos];
+        setVisitPhotos(updatedPhotos);
+        setVisitForm({ ...visitForm, photos: updatedPhotos });
+      } catch (error) {
+        setMessage('Error uploading photos: ' + error.message);
+      }
+    }
+  };
+
+  const removeVisitPhoto = (index) => {
+    const updatedPhotos = visitForm.photos.filter((_, i) => i !== index);
+    setVisitPhotos(updatedPhotos);
+    setVisitForm({ ...visitForm, photos: updatedPhotos });
   };
 
   const handleStartEditOwner = (owner) => {
@@ -222,8 +273,10 @@ export default function App() {
       chipped: dog.chipped,
       neutered_spayed: dog.neutered_spayed,
       vet: dog.vet,
-      vet_phone: dog.vet_phone
+      vet_phone: dog.vet_phone,
+      photo: dog.photo || null
     });
+    setDogPhoto(dog.photo || null);
     setScreen('editDog');
   };
 
@@ -247,7 +300,8 @@ export default function App() {
         chipped: editDogForm.chipped,
         neutered_spayed: editDogForm.neutered_spayed,
         vet: editDogForm.vet,
-        vet_phone: editDogForm.vet_phone
+        vet_phone: editDogForm.vet_phone,
+        photo: editDogForm.photo
       })
       .eq('id', editingDog.id);
 
@@ -270,13 +324,31 @@ export default function App() {
     dog.pet_name.toLowerCase().includes(dogNameSearch.toLowerCase())
   );
 
+  // Extract surname from full name (last word)
+  const extractSurname = (fullName) => {
+    if (!fullName) return '';
+    const parts = fullName.trim().split(' ');
+    return parts[parts.length - 1];
+  };
+
   useEffect(() => {
     if (ownerSearch.trim()) {
-      const filtered = owners.filter(owner =>
-        owner.name.toLowerCase().includes(ownerSearch.toLowerCase()) ||
-        (owner.phone && owner.phone.includes(ownerSearch))
-      );
-      setFilteredOwners(filtered);
+      const searchLower = ownerSearch.toLowerCase();
+      // Filter by surname match (case-insensitive)
+      const filtered = owners.filter(owner => {
+        const surname = extractSurname(owner.name).toLowerCase();
+        return surname.includes(searchLower) || owner.name.toLowerCase().includes(searchLower);
+      });
+      // Sort filtered results alphabetically by surname, then by full name
+      const sorted = filtered.sort((a, b) => {
+        const surnameA = extractSurname(a.name).toLowerCase();
+        const surnameB = extractSurname(b.name).toLowerCase();
+        if (surnameA !== surnameB) {
+          return surnameA.localeCompare(surnameB);
+        }
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      });
+      setFilteredOwners(sorted);
     } else {
       setFilteredOwners([]);
     }
@@ -677,6 +749,21 @@ export default function App() {
           </label>
         </div>
 
+        <div className="form-section">
+          <label>Dog Photo</label>
+          <input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleDogPhotoUpload}
+            className="photo-input"
+          />
+          {editDogForm.photo && (
+            <div className="photo-preview">
+              <img src={editDogForm.photo} alt={editingDog.pet_name} className="dog-photo" />
+            </div>
+          )}
+        </div>
+
         <div className="button-group">
           <button className="btn btn-primary" onClick={handleSaveEditDog}>Save Changes</button>
           <button className="btn btn-secondary" onClick={handleCancelEditDog}>Cancel</button>
@@ -712,6 +799,11 @@ export default function App() {
         </div>
         
         <h2>Dog Details</h2>
+        {selectedDog.photo && (
+          <div className="photo-preview">
+            <img src={selectedDog.photo} alt={selectedDog.pet_name} className="dog-photo" />
+          </div>
+        )}
         <p><strong>Breed:</strong> {selectedDog.breed}</p>
         <p><strong>Colour:</strong> {selectedDog.colour}</p>
         <p><strong>Age:</strong> {selectedDog.pet_age}</p>
@@ -729,6 +821,16 @@ export default function App() {
                 <p><strong>Notes:</strong> {visit.treatment_notes || 'None'}</p>
                 <p><strong>Payment:</strong> £{visit.payment_amount || '0.00'} ({visit.payment_method || 'N/A'})</p>
                 <p><strong>Signature:</strong> {visit.signature_of_consent ? 'Provided' : 'Not provided'}</p>
+                {visit.photos && visit.photos.length > 0 && (
+                  <div className="visit-photos-section">
+                    <p><strong>Photos:</strong> {visit.photos.length} image(s)</p>
+                    <div className="photos-grid">
+                      {visit.photos.map((photo, index) => (
+                        <img key={index} src={photo} alt={`Visit photo ${index + 1}`} className="visit-photo-thumbnail" />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -738,7 +840,8 @@ export default function App() {
 
         <div className="button-group">
           <button className="btn btn-primary" onClick={() => {
-            setVisitForm({ visit_date: '', treatment_notes: '', payment_amount: '', payment_method: '', signature_of_consent: false });
+            setVisitForm({ visit_date: '', treatment_notes: '', payment_amount: '', payment_method: '', signature_of_consent: false, photos: [] });
+            setVisitPhotos([]);
             setScreen('recordVisit');
           }}>Add Visit</button>
           <button className="btn btn-primary" onClick={() => handleStartEditDog(selectedDog)}>Edit Dog</button>
@@ -748,6 +851,6 @@ export default function App() {
     );
   }
 if (screen === 'recordVisit' && selectedDog) {
-  return <RecordVisit setScreen={setScreen} selectedDog={selectedDog} visitForm={visitForm} setVisitForm={setVisitForm} handleCreateVisit={handleCreateVisit} message={message} owners={owners} selectedOwner={selectedOwner} setEditingOwner={setEditingOwner} setEditOwnerForm={setEditOwnerForm} />;
+  return <RecordVisit setScreen={setScreen} selectedDog={selectedDog} visitForm={visitForm} setVisitForm={setVisitForm} handleCreateVisit={handleCreateVisit} message={message} owners={owners} selectedOwner={selectedOwner} setEditingOwner={setEditingOwner} setEditOwnerForm={setEditOwnerForm} handleVisitPhotoUpload={handleVisitPhotoUpload} visitPhotos={visitPhotos} removeVisitPhoto={removeVisitPhoto} />;
 }
 }
