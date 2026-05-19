@@ -20,6 +20,7 @@ export default function App() {
   
   const [dogNameSearch, setDogNameSearch] = useState('');
   const [ownerSearch, setOwnerSearch] = useState('');
+  const [ownerSearchFindDog, setOwnerSearchFindDog] = useState('');
   const [filteredOwners, setFilteredOwners] = useState([]);
   const [editingOwner, setEditingOwner] = useState(null);
   const [editOwnerForm, setEditOwnerForm] = useState({ name: '', phone: '', email: '', postcode: '', house_street: '', town: '' });
@@ -187,6 +188,48 @@ export default function App() {
     const updatedPhotos = visitForm.photos.filter((_, i) => i !== index);
     setVisitPhotos(updatedPhotos);
     setVisitForm({ ...visitForm, photos: updatedPhotos });
+  };
+
+  // SESSION 019 FIX: Get unique owners sorted alphabetically by surname
+  const getFilteredAndSortedOwners = (searchTerm = '') => {
+    const uniqueOwners = Array.from(
+      new Set(owners.map(o => o.name))
+    );
+    
+    const sorted = uniqueOwners.sort((a, b) => {
+      const lastNameA = a.split(' ').pop().toLowerCase();
+      const lastNameB = b.split(' ').pop().toLowerCase();
+      return lastNameA.localeCompare(lastNameB);
+    });
+    
+    if (searchTerm.trim()) {
+      return sorted.filter(name => {
+        const surname = name.split(' ').pop().toLowerCase();
+        return surname.startsWith(searchTerm.toLowerCase());
+      });
+    }
+    
+    return sorted;
+  };
+
+  // Find/Add Dog owner search - filters by name or phone (CR 19 May 2026)
+  const getFilteredOwnersBySearch = (searchTerm = '') => {
+    if (!searchTerm.trim()) {
+      return [];
+    }
+    const searchLower = searchTerm.toLowerCase();
+    return owners.filter(owner => {
+      const nameLower = owner.name.toLowerCase();
+      const phoneLower = (owner.phone || '').toLowerCase();
+      return nameLower.includes(searchLower) || phoneLower.includes(searchLower);
+    }).sort((a, b) => {
+      const surnameA = a.name.split(' ').pop().toLowerCase();
+      const surnameB = b.name.split(' ').pop().toLowerCase();
+      if (surnameA !== surnameB) {
+        return surnameA.localeCompare(surnameB);
+      }
+      return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    });
   };
 
   const handleStartEditOwner = (owner) => {
@@ -431,29 +474,69 @@ export default function App() {
         </div>
 
         <h2>Register New Dog</h2>
-        <p>Select owner:</p>
-        <select onChange={(e) => {
-          const owner = owners.find(o => o.id === parseInt(e.target.value));
-          setSelectedOwner(owner);
-          if (owner) fetchDogs(owner.id);
-        }} className="full-width">
-          <option value="">-- Choose an owner --</option>
-          {owners.map(owner => (
-            <option key={owner.id} value={owner.id}>
-              {owner.name} ({owner.phone || 'no phone'})
-            </option>
-          ))}
-        </select>
+        
+        <label>Search owner by name or phone:</label>
+        <input
+          type="text"
+          placeholder="Type owner name or phone..."
+          value={ownerSearchFindDog}
+          onChange={(e) => setOwnerSearchFindDog(e.target.value)}
+          className="search-input"
+          style={{ width: '100%', padding: '8px', marginBottom: '8px' }}
+        />
+        
+        {ownerSearchFindDog && (
+          <div className="search-results" style={{ marginBottom: '16px' }}>
+            {getFilteredOwnersBySearch(ownerSearchFindDog).length > 0 ? (
+              <div>
+                <h3>Found owner(s)</h3>
+                {getFilteredOwnersBySearch(ownerSearchFindDog).map(owner => (
+                  <div key={owner.id} className="owner-card" style={{ marginBottom: '8px', cursor: 'pointer' }}>
+                    <div className="owner-info">
+                      <p><strong>Name:</strong> {owner.name}</p>
+                      <p><strong>Phone:</strong> {owner.phone || 'Not provided'}</p>
+                      <p><strong>Email:</strong> {owner.email || 'Not provided'}</p>
+                    </div>
+                    <div className="owner-actions">
+                      <button 
+                        className="btn btn-small" 
+                        onClick={() => {
+                          setSelectedOwner(owner);
+                          setOwnerSearchFindDog('');
+                          fetchDogs(owner.id);
+                        }}
+                      >
+                        Select
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="no-results">No owners found</p>
+            )}
+          </div>
+        )}
         
         {selectedOwner && (
-          <p className="inline-link">
+          <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
+            <p><strong>Selected Owner:</strong> {selectedOwner.name}</p>
+            <p style={{ margin: '4px 0 0 0', fontSize: '0.9em' }}>{selectedOwner.phone || 'No phone'}</p>
             <button 
               className="link-button"
               onClick={() => handleStartEditOwner(selectedOwner)}
+              style={{ marginTop: '8px' }}
             >
               Edit Owner
             </button>
-          </p>
+            <button 
+              className="link-button"
+              onClick={() => setSelectedOwner(null)}
+              style={{ marginTop: '8px', marginLeft: '8px', color: '#d32f2f' }}
+            >
+              Clear Selection
+            </button>
+          </div>
         )}
 
         {selectedOwner && dogs.length > 0 && (
