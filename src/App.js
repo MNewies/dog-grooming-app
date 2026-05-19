@@ -212,6 +212,26 @@ export default function App() {
     return sorted;
   };
 
+  // Find/Add Dog owner search - filters by name or phone (CR 19 May 2026)
+  const getFilteredOwnersBySearch = (searchTerm = '') => {
+    if (!searchTerm.trim()) {
+      return [];
+    }
+    const searchLower = searchTerm.toLowerCase();
+    return owners.filter(owner => {
+      const nameLower = owner.name.toLowerCase();
+      const phoneLower = (owner.phone || '').toLowerCase();
+      return nameLower.includes(searchLower) || phoneLower.includes(searchLower);
+    }).sort((a, b) => {
+      const surnameA = a.name.split(' ').pop().toLowerCase();
+      const surnameB = b.name.split(' ').pop().toLowerCase();
+      if (surnameA !== surnameB) {
+        return surnameA.localeCompare(surnameB);
+      }
+      return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    });
+  };
+
   const handleStartEditOwner = (owner) => {
     setEditingOwner(owner);
     setEditOwnerForm({
@@ -455,44 +475,68 @@ export default function App() {
 
         <h2>Register New Dog</h2>
         
-        <label>Search owner by surname:</label>
+        <label>Search owner by name or phone:</label>
         <input
           type="text"
-          placeholder="Type surname..."
+          placeholder="Type owner name or phone..."
           value={ownerSearchFindDog}
           onChange={(e) => setOwnerSearchFindDog(e.target.value)}
+          className="search-input"
           style={{ width: '100%', padding: '8px', marginBottom: '8px' }}
         />
         
-        <label>Select owner:</label>
-        <select
-          value={selectedOwner ? selectedOwner.id : ''}
-          onChange={(e) => {
-            const owner = owners.find(o => o.id === parseInt(e.target.value));
-            setSelectedOwner(owner || null);
-          }}
-          style={{ width: '100%' }}
-        >
-          <option value="">-- Choose an owner --</option>
-          {getFilteredAndSortedOwners(ownerSearchFindDog)
-            .map((ownerName) => owners.find(o => o.name === ownerName))
-            .filter(owner => owner !== undefined)
-            .map((owner) => (
-              <option key={owner.id} value={owner.id}>
-                {owner.name} ({owner.phone || 'no phone'})
-              </option>
-            ))}
-        </select>
+        {ownerSearchFindDog && (
+          <div className="search-results" style={{ marginBottom: '16px' }}>
+            {getFilteredOwnersBySearch(ownerSearchFindDog).length > 0 ? (
+              <div>
+                <h3>Found owner(s)</h3>
+                {getFilteredOwnersBySearch(ownerSearchFindDog).map(owner => (
+                  <div key={owner.id} className="owner-card" style={{ marginBottom: '8px', cursor: 'pointer' }}>
+                    <div className="owner-info">
+                      <p><strong>Name:</strong> {owner.name}</p>
+                      <p><strong>Phone:</strong> {owner.phone || 'Not provided'}</p>
+                      <p><strong>Email:</strong> {owner.email || 'Not provided'}</p>
+                    </div>
+                    <div className="owner-actions">
+                      <button 
+                        className="btn btn-small" 
+                        onClick={() => {
+                          setSelectedOwner(owner);
+                          setOwnerSearchFindDog('');
+                          fetchDogs(owner.id);
+                        }}
+                      >
+                        Select
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="no-results">No owners found</p>
+            )}
+          </div>
+        )}
         
         {selectedOwner && (
-          <p className="inline-link">
+          <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
+            <p><strong>Selected Owner:</strong> {selectedOwner.name}</p>
+            <p style={{ margin: '4px 0 0 0', fontSize: '0.9em' }}>{selectedOwner.phone || 'No phone'}</p>
             <button 
               className="link-button"
               onClick={() => handleStartEditOwner(selectedOwner)}
+              style={{ marginTop: '8px' }}
             >
               Edit Owner
             </button>
-          </p>
+            <button 
+              className="link-button"
+              onClick={() => setSelectedOwner(null)}
+              style={{ marginTop: '8px', marginLeft: '8px', color: '#d32f2f' }}
+            >
+              Clear Selection
+            </button>
+          </div>
         )}
 
         {selectedOwner && dogs.length > 0 && (
