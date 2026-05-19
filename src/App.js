@@ -474,14 +474,14 @@ export default function App() {
           style={{ width: '100%' }}
         >
           <option value="">-- Choose an owner --</option>
-          {getFilteredAndSortedOwners(ownerSearchFindDog).map((ownerName) => {
-            const owner = owners.find(o => o.name === ownerName);
-            return owner ? (
+          {getFilteredAndSortedOwners(ownerSearchFindDog)
+            .map((ownerName) => owners.find(o => o.name === ownerName))
+            .filter(owner => owner !== undefined)
+            .map((owner) => (
               <option key={owner.id} value={owner.id}>
                 {owner.name} ({owner.phone || 'no phone'})
               </option>
-            ) : null;
-          })}
+            ))}
         </select>
         
         {selectedOwner && (
