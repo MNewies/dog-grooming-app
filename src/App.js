@@ -476,11 +476,11 @@ export default function App() {
           <option value="">-- Choose an owner --</option>
           {getFilteredAndSortedOwners(ownerSearchFindDog).map((ownerName) => {
             const owner = owners.find(o => o.name === ownerName);
-            return (
+            return owner ? (
               <option key={owner.id} value={owner.id}>
                 {owner.name} ({owner.phone || 'no phone'})
               </option>
-            );
+            ) : null;
           })}
         </select>
         
