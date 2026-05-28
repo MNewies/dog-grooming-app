@@ -55,7 +55,7 @@ export default function RecordVisit({ setScreen, selectedDog, visitForm, setVisi
               <div className="photos-grid">
                 {visitPhotos.map((photo, index) => (
                   <div key={index} className="photo-item">
-                    <img src={photo} alt={`Visit photo ${index + 1}`} className="visit-photo" />
+                    <img src={photo} alt="visit photo" className="visit-photo" />
                     <button 
                       type="button"
                       className="btn btn-small btn-delete"
