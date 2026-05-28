@@ -255,7 +255,7 @@ export default function App() {
         setMessage('Please select a valid image file');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         setMessage('Image file size must be less than 5MB');
         return;
       }
@@ -376,8 +376,8 @@ export default function App() {
   }
 
   if (screen === 'createOwner') {
-  return <CreateOwner setScreen={setScreen} ownerForm={ownerForm} setOwnerForm={setOwnerForm} handleCreateOwner={handleCreateOwner} message={message} />;
-}
+    return <CreateOwner setScreen={setScreen} ownerForm={ownerForm} setOwnerForm={setOwnerForm} handleCreateOwner={handleCreateOwner} message={message} />;
+  }
 
   if (screen === 'findDog') {
     return (
@@ -612,7 +612,6 @@ export default function App() {
   }
 
   if (screen === 'editOwner' && editingOwner) {
-    // Get dogs owned by this owner
     const ownersDogs = dogs && dogs.length > 0 
       ? dogs.filter(dog => dog.owner_id === editingOwner.id)
       : [];
@@ -621,7 +620,6 @@ export default function App() {
       <div className="container">
         <h1>Edit Owner - {editingOwner.name}</h1>
         
-        {/* Dogs Owned Section */}
         <div className="section">
           <h2>Dog(s) Owned</h2>
           {ownersDogs.length > 0 ? (
@@ -712,7 +710,6 @@ export default function App() {
   }
 
   if (screen === 'editDog' && editingDog) {
-    // Find the owner of this dog
     const dogOwner = owners.find(o => o.id === editingDog.owner_id);
     
     return (
@@ -803,7 +800,6 @@ export default function App() {
             Neutered/Spayed
           </label>
 
-          {/* Photo Upload Section */}
           <div className="photo-section" style={{ marginTop: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '5px' }}>
             <label><strong>Dog Photo</strong></label>
             <p style={{ fontSize: '14px', color: '#666' }}>Upload a photo of {editingDog.pet_name}</p>
@@ -820,7 +816,7 @@ export default function App() {
               <div style={{ marginTop: '10px', marginBottom: '10px' }}>
                 <img 
                   src={photoPreview} 
-                  alt="Photo preview" 
+                  alt="Preview"
                   style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '5px' }}
                 />
               </div>
@@ -856,7 +852,6 @@ export default function App() {
   }
 
   if (screen === 'viewDog' && selectedDog) {
-    // Find the owner of this dog
     const dogOwner = owners.find(o => o.id === selectedDog.owner_id);
     
     return (
@@ -882,7 +877,6 @@ export default function App() {
         
         <h2>Dog Details</h2>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-          {/* Left column: Dog details */}
           <div style={{ flex: 1 }}>
             <p><strong>Breed:</strong> {selectedDog.breed}</p>
             <p><strong>Colour:</strong> {selectedDog.colour}</p>
@@ -893,12 +887,11 @@ export default function App() {
             <p><strong>Vet Phone:</strong> {selectedDog.vet_phone}</p>
           </div>
           
-          {/* Right column: Dog photo */}
           {(selectedDog.photo || selectedDog.photo_url) && (
             <div style={{ flex: 0, textAlign: 'center' }}>
               <img 
                 src={selectedDog.photo || selectedDog.photo_url} 
-                alt={selectedDog.pet_name}
+                alt="Dog"
                 style={{ maxWidth: '250px', maxHeight: '300px', borderRadius: '8px', border: '2px solid #ddd' }}
               />
             </div>
