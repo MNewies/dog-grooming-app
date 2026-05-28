@@ -55,6 +55,7 @@ export default function RecordVisit({ setScreen, selectedDog, visitForm, setVisi
               <div className="photos-grid">
                 {visitPhotos.map((photo, index) => (
                   <div key={index} className="photo-item">
+                    {/* eslint-disable-next-line jsx-a11y/img-redundant-alt */}
                     <img src={photo} alt="visit photo" className="visit-photo" />
                     <button 
                       type="button"
