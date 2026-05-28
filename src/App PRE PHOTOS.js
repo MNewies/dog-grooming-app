@@ -29,10 +29,7 @@ export default function App() {
   const [phoneWarning, setPhoneWarning] = useState('');
   
   const [editingDog, setEditingDog] = useState(null);
-  const [editDogForm, setEditDogForm] = useState({ pet_name: '', pet_age: '', breed: '', colour: '', chipped: false, neutered_spayed: false, vet: '', vet_phone: '', photo_url: '' });
-  const [photoFile, setPhotoFile] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [editDogForm, setEditDogForm] = useState({ pet_name: '', pet_age: '', breed: '', colour: '', chipped: false, neutered_spayed: false, vet: '', vet_phone: '' });
   
   const [selectedOwner, setSelectedOwner] = useState(null);
   const [selectedDog, setSelectedDog] = useState(null);
@@ -236,73 +233,13 @@ export default function App() {
       chipped: dog.chipped,
       neutered_spayed: dog.neutered_spayed,
       vet: dog.vet,
-      vet_phone: dog.vet_phone,
-      photo_url: dog.photo || ''
+      vet_phone: dog.vet_phone
     });
-    setPhotoFile(null);
-    setPhotoPreview(dog.photo || null);
     setScreen('editDog');
   };
 
   const handleEditDogFieldChange = (field, value) => {
     setEditDogForm({ ...editDogForm, [field]: value });
-  };
-
-  const handlePhotoSelect = (event) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        setMessage('Please select a valid image file');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setMessage('Image file size must be less than 5MB');
-        return;
-      }
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPhotoPreview(e.target?.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleUploadPhoto = async () => {
-    if (!photoFile || !editingDog) {
-      setMessage('No photo selected');
-      return;
-    }
-
-    setUploadingPhoto(true);
-    try {
-      const timestamp = Date.now();
-      const fileName = `${editingDog.id}-${timestamp}-${photoFile.name}`;
-      
-      const { data, error: uploadError } = await supabase.storage
-        .from('dog-photos')
-        .upload(fileName, photoFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) {
-        setMessage('Error uploading photo: ' + uploadError.message);
-        setUploadingPhoto(false);
-        return;
-      }
-
-      if (data && data.path) {
-        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/dog-photos/${data.path}`;
-        setEditDogForm({ ...editDogForm, photo_url: publicUrl });
-        setMessage('Photo uploaded successfully');
-        setPhotoFile(null);
-      }
-    } catch (error) {
-      setMessage('Error uploading photo: ' + error.message);
-    } finally {
-      setUploadingPhoto(false);
-    }
   };
 
   const handleSaveEditDog = async () => {
@@ -321,8 +258,7 @@ export default function App() {
         chipped: editDogForm.chipped,
         neutered_spayed: editDogForm.neutered_spayed,
         vet: editDogForm.vet,
-        vet_phone: editDogForm.vet_phone,
-        photo: editDogForm.photo_url
+        vet_phone: editDogForm.vet_phone
       })
       .eq('id', editingDog.id);
 
@@ -330,18 +266,14 @@ export default function App() {
       setMessage('Error saving dog: ' + error.message);
     } else {
       setMessage('Dog updated successfully');
-      setSelectedDog({ ...editingDog, ...editDogForm, photo: editDogForm.photo_url });
+      setSelectedDog({ ...editingDog, ...editDogForm });
       setEditingDog(null);
-      setPhotoFile(null);
-      setPhotoPreview(null);
       setTimeout(() => setScreen('viewDog'), 1500);
     }
   };
 
   const handleCancelEditDog = () => {
     setEditingDog(null);
-    setPhotoFile(null);
-    setPhotoPreview(null);
     setScreen('viewDog');
   };
 
@@ -802,48 +734,6 @@ export default function App() {
             />
             Neutered/Spayed
           </label>
-
-          {/* Photo Upload Section */}
-          <div className="photo-section" style={{ marginTop: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '5px' }}>
-            <label><strong>Dog Photo</strong></label>
-            <p style={{ fontSize: '14px', color: '#666' }}>Upload a photo of {editingDog.pet_name}</p>
-            
-            <input 
-              type="file" 
-              accept="image/*"
-              onChange={handlePhotoSelect}
-              disabled={uploadingPhoto}
-              style={{ marginBottom: '10px' }}
-            />
-            
-            {photoPreview && (
-              <div style={{ marginTop: '10px', marginBottom: '10px' }}>
-                <img 
-                  src={photoPreview} 
-                  alt="Photo preview" 
-                  style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '5px' }}
-                />
-              </div>
-            )}
-            
-            {photoFile && !uploadingPhoto && (
-              <button 
-                className="btn btn-small" 
-                onClick={handleUploadPhoto}
-                style={{ marginBottom: '10px', backgroundColor: '#4CAF50', color: 'white' }}
-              >
-                Upload Photo
-              </button>
-            )}
-            
-            {uploadingPhoto && (
-              <p style={{ color: '#FF9800' }}>Uploading photo...</p>
-            )}
-            
-            {editDogForm.photo_url && !photoFile && (
-              <p style={{ color: '#4CAF50', fontSize: '14px' }}>✓ Photo uploaded successfully</p>
-            )}
-          </div>
         </div>
 
         <div className="button-group">
@@ -881,29 +771,13 @@ export default function App() {
         </div>
         
         <h2>Dog Details</h2>
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-          {/* Left column: Dog details */}
-          <div style={{ flex: 1 }}>
-            <p><strong>Breed:</strong> {selectedDog.breed}</p>
-            <p><strong>Colour:</strong> {selectedDog.colour}</p>
-            <p><strong>Age:</strong> {selectedDog.pet_age}</p>
-            <p><strong>Chipped:</strong> {selectedDog.chipped ? 'Yes' : 'No'}</p>
-            <p><strong>Neutered/Spayed:</strong> {selectedDog.neutered_spayed ? 'Yes' : 'No'}</p>
-            <p><strong>Vet:</strong> {selectedDog.vet}</p>
-            <p><strong>Vet Phone:</strong> {selectedDog.vet_phone}</p>
-          </div>
-          
-          {/* Right column: Dog photo */}
-          {(selectedDog.photo || selectedDog.photo_url) && (
-            <div style={{ flex: 0, textAlign: 'center' }}>
-              <img 
-                src={selectedDog.photo || selectedDog.photo_url} 
-                alt={selectedDog.pet_name}
-                style={{ maxWidth: '250px', maxHeight: '300px', borderRadius: '8px', border: '2px solid #ddd' }}
-              />
-            </div>
-          )}
-        </div>
+        <p><strong>Breed:</strong> {selectedDog.breed}</p>
+        <p><strong>Colour:</strong> {selectedDog.colour}</p>
+        <p><strong>Age:</strong> {selectedDog.pet_age}</p>
+        <p><strong>Chipped:</strong> {selectedDog.chipped ? 'Yes' : 'No'}</p>
+        <p><strong>Neutered/Spayed:</strong> {selectedDog.neutered_spayed ? 'Yes' : 'No'}</p>
+        <p><strong>Vet:</strong> {selectedDog.vet}</p>
+        <p><strong>Vet Phone:</strong> {selectedDog.vet_phone}</p>
 
         <h2>Visit History</h2>
         {visits.length > 0 ? (
@@ -932,8 +806,7 @@ export default function App() {
       </div>
     );
   }
-
-  if (screen === 'recordVisit' && selectedDog) {
-    return <RecordVisit setScreen={setScreen} selectedDog={selectedDog} visitForm={visitForm} setVisitForm={setVisitForm} handleCreateVisit={handleCreateVisit} message={message} owners={owners} selectedOwner={selectedOwner} setEditingOwner={setEditingOwner} setEditOwnerForm={setEditOwnerForm} />;
-  }
+if (screen === 'recordVisit' && selectedDog) {
+  return <RecordVisit setScreen={setScreen} selectedDog={selectedDog} visitForm={visitForm} setVisitForm={setVisitForm} handleCreateVisit={handleCreateVisit} message={message} owners={owners} selectedOwner={selectedOwner} setEditingOwner={setEditingOwner} setEditOwnerForm={setEditOwnerForm} />;
+}
 }
