@@ -191,47 +191,7 @@ export default function App() {
     setVisitForm({ ...visitForm, photos: updatedPhotos });
   };
 
-  // SESSION 019 FIX: Get unique owners sorted alphabetically by surname
-  const getFilteredAndSortedOwners = (searchTerm = '') => {
-    const uniqueOwners = Array.from(
-      new Set(owners.map(o => o.name))
-    );
-    
-    const sorted = uniqueOwners.sort((a, b) => {
-      const lastNameA = a.split(' ').pop().toLowerCase();
-      const lastNameB = b.split(' ').pop().toLowerCase();
-      return lastNameA.localeCompare(lastNameB);
-    });
-    
-    if (searchTerm.trim()) {
-      return sorted.filter(name => {
-        const surname = name.split(' ').pop().toLowerCase();
-        return surname.startsWith(searchTerm.toLowerCase());
-      });
-    }
-    
-    return sorted;
-  };
 
-  // Find/Add Dog owner search - filters by name or phone (CR 19 May 2026)
-  const getFilteredOwnersBySearch = (searchTerm = '') => {
-    if (!searchTerm.trim()) {
-      return [];
-    }
-    const searchLower = searchTerm.toLowerCase();
-    return owners.filter(owner => {
-      const nameLower = owner.name.toLowerCase();
-      const phoneLower = (owner.phone || '').toLowerCase();
-      return nameLower.includes(searchLower) || phoneLower.includes(searchLower);
-    }).sort((a, b) => {
-      const surnameA = a.name.split(' ').pop().toLowerCase();
-      const surnameB = b.name.split(' ').pop().toLowerCase();
-      if (surnameA !== surnameB) {
-        return surnameA.localeCompare(surnameB);
-      }
-      return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-    });
-  };
 
   const handleStartEditOwner = (owner) => {
     setEditingOwner(owner);
