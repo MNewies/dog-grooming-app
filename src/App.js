@@ -826,6 +826,19 @@ export default function App() {
     );
   }
 if (screen === 'recordVisit' && selectedDog) {
-  return <RecordVisit setScreen={setScreen} selectedDog={selectedDog} visitForm={visitForm} setVisitForm={setVisitForm} handleCreateVisit={handleCreateVisit} message={message} owners={owners} selectedOwner={selectedOwner} setEditingOwner={setEditingOwner} setEditOwnerForm={setEditOwnerForm} />;
-}
-}
+     return (
+       <RecordVisit 
+         setScreen={setScreen} 
+         selectedDog={selectedDog} 
+         visitForm={visitForm} 
+         setVisitForm={setVisitForm} 
+         handleCreateVisit={handleCreateVisit} 
+         message={message} 
+         owners={owners} 
+         selectedOwner={selectedOwner} 
+         setEditingOwner={setEditingOwner} 
+         setEditOwnerForm={setEditOwnerForm} 
+       />
+     );
+   }
+   }
