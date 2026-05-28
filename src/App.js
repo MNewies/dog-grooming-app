@@ -22,6 +22,7 @@ export default function App() {
   const [ownerSearch, setOwnerSearch] = useState('');
   const [ownerSearchFindDog, setOwnerSearchFindDog] = useState('');
   const [filteredOwners, setFilteredOwners] = useState([]);
+  const [filteredOwnersFindDog, setFilteredOwnersFindDog] = useState([]);
   const [editingOwner, setEditingOwner] = useState(null);
   const [editOwnerForm, setEditOwnerForm] = useState({ name: '', phone: '', email: '', postcode: '', house_street: '', town: '' });
   const [emailError, setEmailError] = useState('');
@@ -397,6 +398,29 @@ export default function App() {
     }
   }, [ownerSearch, owners]);
 
+  // CR 27 MAY 2026: Screen 5 (Find/Add Dog) - Owner search filtering using useEffect
+  useEffect(() => {
+    if (ownerSearchFindDog.trim()) {
+      const searchLower = ownerSearchFindDog.toLowerCase();
+      const filtered = owners.filter(owner => {
+        const nameLower = owner.name.toLowerCase();
+        const phoneLower = (owner.phone || '').toLowerCase();
+        const postcodeLower = (owner.postcode || '').toLowerCase();
+        return nameLower.includes(searchLower) || phoneLower.includes(searchLower) || postcodeLower.includes(searchLower);
+      }).sort((a, b) => {
+        const surnameA = a.name.split(' ').pop().toLowerCase();
+        const surnameB = b.name.split(' ').pop().toLowerCase();
+        if (surnameA !== surnameB) {
+          return surnameA.localeCompare(surnameB);
+        }
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      });
+      setFilteredOwnersFindDog(filtered);
+    } else {
+      setFilteredOwnersFindDog([]);
+    }
+  }, [ownerSearchFindDog, owners]);
+
   if (screen === 'home') {
     return (
       <div className="container">
@@ -487,10 +511,10 @@ export default function App() {
         
         {ownerSearchFindDog && (
           <div className="search-results" style={{ marginBottom: '16px' }}>
-            {getFilteredOwnersBySearch(ownerSearchFindDog).length > 0 ? (
+            {filteredOwnersFindDog.length > 0 ? (
               <div>
-                <h3>Found owner(s)</h3>
-                {getFilteredOwnersBySearch(ownerSearchFindDog).map(owner => (
+                <h3>Found {filteredOwnersFindDog.length} owner(s)</h3>
+                {filteredOwnersFindDog.map(owner => (
                   <div key={owner.id} className="owner-card" style={{ marginBottom: '8px', cursor: 'pointer' }}>
                     <div className="owner-info">
                       <p><strong>Name:</strong> {owner.name}</p>
