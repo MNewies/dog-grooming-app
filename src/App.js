@@ -47,9 +47,9 @@ export default function App() {
 
   useEffect(() => {
     const filtered = owners.filter(owner =>
-      owner.name.toLowerCase().includes(ownerSearchFindDog.toLowerCase()) ||
-      owner.phone.toLowerCase().includes(ownerSearchFindDog.toLowerCase()) ||
-      owner.postcode.toLowerCase().includes(ownerSearchFindDog.toLowerCase())
+      (owner.name && owner.name.toLowerCase().includes(ownerSearchFindDog.toLowerCase())) ||
+      (owner.phone && owner.phone.toLowerCase().includes(ownerSearchFindDog.toLowerCase())) ||
+      (owner.postcode && owner.postcode.toLowerCase().includes(ownerSearchFindDog.toLowerCase()))
     );
     setFilteredOwnersFindDog(filtered);
   }, [ownerSearchFindDog, owners]);
