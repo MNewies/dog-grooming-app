@@ -20,8 +20,8 @@ export default function App() {
   
   const [dogNameSearch, setDogNameSearch] = useState('');
   const [ownerSearch, setOwnerSearch] = useState('');
-  const [ownerSearchFindDog, setOwnerSearchFindDog] = useState('');
   const [filteredOwners, setFilteredOwners] = useState([]);
+  const [ownerSearchFindDog, setOwnerSearchFindDog] = useState('');
   const [filteredOwnersFindDog, setFilteredOwnersFindDog] = useState([]);
   const [editingOwner, setEditingOwner] = useState(null);
   const [editOwnerForm, setEditOwnerForm] = useState({ name: '', phone: '', email: '', postcode: '', house_street: '', town: '' });
@@ -44,6 +44,15 @@ export default function App() {
       fetchAllDogs();
     }
   }, [screen]);
+
+  useEffect(() => {
+    const filtered = owners.filter(owner =>
+      owner.name.toLowerCase().includes(ownerSearchFindDog.toLowerCase()) ||
+      owner.phone.toLowerCase().includes(ownerSearchFindDog.toLowerCase()) ||
+      owner.postcode.toLowerCase().includes(ownerSearchFindDog.toLowerCase())
+    );
+    setFilteredOwnersFindDog(filtered);
+  }, [ownerSearchFindDog, owners]);
 
   const fetchOwners = async () => {
     const { data, error } = await supabase.from('owners').select('*');
@@ -272,57 +281,17 @@ export default function App() {
     dog.pet_name.toLowerCase().includes(dogNameSearch.toLowerCase())
   );
 
-  // Extract surname from full name (last word)
-  const extractSurname = (fullName) => {
-    if (!fullName) return '';
-    const parts = fullName.trim().split(' ');
-    return parts[parts.length - 1];
-  };
-
-  // Screen 3 (Manage Owner) - Owner search filtering
   useEffect(() => {
     if (ownerSearch.trim()) {
-      const searchLower = ownerSearch.toLowerCase();
-      const filtered = owners.filter(owner => {
-        const surname = extractSurname(owner.name).toLowerCase();
-        return surname.includes(searchLower) || owner.name.toLowerCase().includes(searchLower);
-      });
-      const sorted = filtered.sort((a, b) => {
-        const surnameA = extractSurname(a.name).toLowerCase();
-        const surnameB = extractSurname(b.name).toLowerCase();
-        if (surnameA !== surnameB) {
-          return surnameA.localeCompare(surnameB);
-        }
-        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-      });
-      setFilteredOwners(sorted);
+      const filtered = owners.filter(owner =>
+        owner.name.toLowerCase().includes(ownerSearch.toLowerCase()) ||
+        (owner.phone && owner.phone.includes(ownerSearch))
+      );
+      setFilteredOwners(filtered);
     } else {
       setFilteredOwners([]);
     }
   }, [ownerSearch, owners]);
-
-  // CR 27 MAY 2026: Screen 5 (Find/Add Dog) - Owner search filtering using useEffect
-  useEffect(() => {
-    if (ownerSearchFindDog.trim()) {
-      const searchLower = ownerSearchFindDog.toLowerCase();
-      const filtered = owners.filter(owner => {
-        const nameLower = owner.name.toLowerCase();
-        const phoneLower = (owner.phone || '').toLowerCase();
-        const postcodeLower = (owner.postcode || '').toLowerCase();
-        return nameLower.includes(searchLower) || phoneLower.includes(searchLower) || postcodeLower.includes(searchLower);
-      }).sort((a, b) => {
-        const surnameA = a.name.split(' ').pop().toLowerCase();
-        const surnameB = b.name.split(' ').pop().toLowerCase();
-        if (surnameA !== surnameB) {
-          return surnameA.localeCompare(surnameB);
-        }
-        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-      });
-      setFilteredOwnersFindDog(filtered);
-    } else {
-      setFilteredOwnersFindDog([]);
-    }
-  }, [ownerSearchFindDog, owners]);
 
   if (screen === 'home') {
     return (
@@ -401,69 +370,77 @@ export default function App() {
         </div>
 
         <h2>Register New Dog</h2>
-        
-        <label>Search owner by name or phone:</label>
-        <input
-          type="text"
-          placeholder="Type owner name or phone..."
+        <p>Search or select owner:</p>
+        <input 
+          type="text" 
+          placeholder="Search by name, phone, or postcode..." 
           value={ownerSearchFindDog}
           onChange={(e) => setOwnerSearchFindDog(e.target.value)}
           className="search-input"
-          style={{ width: '100%', padding: '8px', marginBottom: '8px' }}
         />
         
-        {ownerSearchFindDog && (
-          <div className="search-results" style={{ marginBottom: '16px' }}>
-            {filteredOwnersFindDog.length > 0 ? (
-              <div>
-                <h3>Found {filteredOwnersFindDog.length} owner(s)</h3>
-                {filteredOwnersFindDog.map(owner => (
-                  <div key={owner.id} className="owner-card" style={{ marginBottom: '8px', cursor: 'pointer' }}>
-                    <div className="owner-info">
-                      <p><strong>Name:</strong> {owner.name}</p>
-                      <p><strong>Phone:</strong> {owner.phone || 'Not provided'}</p>
-                      <p><strong>Email:</strong> {owner.email || 'Not provided'}</p>
-                    </div>
-                    <div className="owner-actions">
-                      <button 
-                        className="btn btn-small" 
-                        onClick={() => {
-                          setSelectedOwner(owner);
-                          setOwnerSearchFindDog('');
-                          fetchDogs(owner.id);
-                        }}
-                      >
-                        Select
-                      </button>
-                    </div>
+        <div className="search-results">
+          {ownerSearchFindDog && filteredOwnersFindDog.length > 0 ? (
+            <div>
+              <h3>Found {filteredOwnersFindDog.length} owner(s)</h3>
+              {filteredOwnersFindDog.map(owner => (
+                <div key={owner.id} className="owner-card">
+                  <div className="owner-info">
+                    <p><strong>Name:</strong> {owner.name}</p>
+                    <p><strong>Phone:</strong> {owner.phone || 'Not provided'}</p>
+                    <p><strong>Email:</strong> {owner.email || 'Not provided'}</p>
+                    <p><strong>Address:</strong> {owner.house_street || 'Not provided'}, {owner.town || ''}</p>
+                    <p><strong>Postcode:</strong> {owner.postcode || 'Not provided'}</p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="no-results">No owners found</p>
-            )}
-          </div>
-        )}
+                  <div className="owner-actions">
+                    <button 
+                      className="btn btn-small" 
+                      onClick={() => {
+                        setSelectedOwner(owner);
+                        fetchDogs(owner.id);
+                        setOwnerSearchFindDog('');
+                      }}
+                    >
+                      Select
+                    </button>
+                    <button 
+                      className="btn btn-small" 
+                      onClick={() => {
+                        setSelectedOwner(owner);
+                        setEditingOwner(owner);
+                        setEditOwnerForm({
+                          name: owner.name,
+                          phone: owner.phone,
+                          email: owner.email,
+                          postcode: owner.postcode,
+                          house_street: owner.house_street,
+                          town: owner.town
+                        });
+                        setScreen('editOwner');
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : ownerSearchFindDog ? (
+            <p className="no-results">No owners found matching that search</p>
+          ) : (
+            <p className="hint">Type to search for an owner</p>
+          )}
+        </div>
         
         {selectedOwner && (
-          <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
-            <p><strong>Selected Owner:</strong> {selectedOwner.name}</p>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.9em' }}>{selectedOwner.phone || 'No phone'}</p>
+          <p className="inline-link">
             <button 
               className="link-button"
               onClick={() => handleStartEditOwner(selectedOwner)}
-              style={{ marginTop: '8px' }}
             >
               Edit Owner
             </button>
-            <button 
-              className="link-button"
-              onClick={() => setSelectedOwner(null)}
-              style={{ marginTop: '8px', marginLeft: '8px', color: '#d32f2f' }}
-            >
-              Clear Selection
-            </button>
-          </div>
+          </p>
         )}
 
         {selectedOwner && dogs.length > 0 && (
@@ -567,6 +544,7 @@ export default function App() {
   }
 
   if (screen === 'editOwner' && editingOwner) {
+    // Get dogs owned by this owner
     const ownersDogs = dogs && dogs.length > 0 
       ? dogs.filter(dog => dog.owner_id === editingOwner.id)
       : [];
@@ -575,6 +553,7 @@ export default function App() {
       <div className="container">
         <h1>Edit Owner - {editingOwner.name}</h1>
         
+        {/* Dogs Owned Section */}
         <div className="section">
           <h2>Dog(s) Owned</h2>
           {ownersDogs.length > 0 ? (
@@ -665,6 +644,7 @@ export default function App() {
   }
 
   if (screen === 'editDog' && editingDog) {
+    // Find the owner of this dog
     const dogOwner = owners.find(o => o.id === editingDog.owner_id);
     
     return (
@@ -766,6 +746,7 @@ export default function App() {
   }
 
   if (screen === 'viewDog' && selectedDog) {
+    // Find the owner of this dog
     const dogOwner = owners.find(o => o.id === selectedDog.owner_id);
     
     return (
@@ -826,19 +807,6 @@ export default function App() {
     );
   }
 if (screen === 'recordVisit' && selectedDog) {
-     return (
-       <RecordVisit 
-         setScreen={setScreen} 
-         selectedDog={selectedDog} 
-         visitForm={visitForm} 
-         setVisitForm={setVisitForm} 
-         handleCreateVisit={handleCreateVisit} 
-         message={message} 
-         owners={owners} 
-         selectedOwner={selectedOwner} 
-         setEditingOwner={setEditingOwner} 
-         setEditOwnerForm={setEditOwnerForm} 
-       />
-     );
-   }
-   }
+  return <RecordVisit setScreen={setScreen} selectedDog={selectedDog} visitForm={visitForm} setVisitForm={setVisitForm} handleCreateVisit={handleCreateVisit} message={message} owners={owners} selectedOwner={selectedOwner} setEditingOwner={setEditingOwner} setEditOwnerForm={setEditOwnerForm} />;
+}
+}
