@@ -59,7 +59,12 @@
 ### Known Issues
 - App.js is 270+ lines; plan component extraction before Feature #4
 - No breed validation against master list yet (future enhancement)
-- Supabase key in App.js (Jan 28, 2026 update)
+
+### Security
+- ✅ Supabase credentials moved to environment variables (Session 11)
+- ✅ Row Level Security enabled on all three tables: owners, dogs, visits (Session 23)
+  - Anon key allowed full access via RLS policy
+  - No public access without valid credentials
 
 ### Database Schema
 **Owners table:** id, name, phone, email, postcode, house_street, town
